@@ -1,0 +1,4 @@
+1.Hardware/ filter=lfs diff=lfs merge=lfs -text
+2.Software/ filter=lfs diff=lfs merge=lfs -text
+README.assets/ filter=lfs diff=lfs merge=lfs -text
+README.md filter=lfs diff=lfs merge=lfs -text
