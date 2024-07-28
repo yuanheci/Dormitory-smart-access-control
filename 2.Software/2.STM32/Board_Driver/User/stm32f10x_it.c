@@ -149,12 +149,12 @@ uint8_t steer_control_flag = 0;
 uint16_t AS608_count = 0;
 uint8_t as608_move_count = 0;
 
-extern uint8_t as_flag;    //±êÖ¾Î»   ÖÃ1±íÊ¾°´ÏÂK4±£´æÖ¸ÎÆÄ£°å   ¹ıÒ»¶ÎÊ±¼äÒªÏûÊ§ÏÔÊ¾
-extern uint8_t as608_move_flag;       //ÓÃÓÚÒÆ³ıÖ¸ÎÆÒ»¶ÎÊ±¼äºó¼ÌµçÆ÷¹Ø±ÕµÄ±êÖ¾Î»
+extern uint8_t as_flag;    //æ ‡å¿—ä½   ç½®1è¡¨ç¤ºæŒ‰ä¸‹K4ä¿å­˜æŒ‡çº¹æ¨¡æ¿   è¿‡ä¸€æ®µæ—¶é—´è¦æ¶ˆå¤±æ˜¾ç¤º
+extern uint8_t as608_move_flag;       //ç”¨äºç§»é™¤æŒ‡çº¹ä¸€æ®µæ—¶é—´åç»§ç”µå™¨å…³é—­çš„æ ‡å¿—ä½
 
-extern uint8_t open_door_flag;    //¿ªÃÅ±êÖ¾Î»
+extern uint8_t open_door_flag;    //å¼€é—¨æ ‡å¿—ä½
 
-uint16_t open_time_count = 0;   //ÓÃÓÚ¿ªÃÅ¼ÇÊ±
+uint16_t open_time_count = 0;   //ç”¨äºå¼€é—¨è®°æ—¶
 
 uint8_t clear_face_display_flag = 0;
 
@@ -162,16 +162,22 @@ extern uint8_t face_rec_fail_flag;
 
 uint8_t face_rec_count = 0;
 
-//¶¨Ê±Æ÷3ÖĞ¶Ï·şÎñ³ÌĞò
-void TIM3_IRQHandler(void)   //TIM3ÖĞ¶Ï   ,20ms½øÒ»´Î
+u8 q[100], hh = 0, tt = 0;
+u8 maxn = 100;
+
+//å®šæ—¶å™¨3ä¸­æ–­æœåŠ¡ç¨‹åº
+void TIM3_IRQHandler(void)   //TIM3ä¸­æ–­   ,20msè¿›ä¸€æ¬¡
 {
-	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  //¼ì²éTIM3¸üĞÂÖĞ¶Ï·¢ÉúÓë·ñ
+	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  //æ£€æŸ¥TIM3æ›´æ–°ä¸­æ–­å‘ç”Ÿä¸å¦
 	{
 		steer_control_flag = 1;
-		implement();       //½øĞĞ¶æ»úPID¿ØÖÆ
+		implement();       //è¿›è¡ŒèˆµæœºPIDæ§åˆ¶
 		time_count++;
+		//20mså¤„ç†ä¸€æ¬¡ä¸²å£æ•°æ®
+		Openmv_Recive(q);
+		face_inf_Rec(q);
 
-		if(time_count>=50)   //1s          //¶æ»úÓë°´¼ü²¢ĞĞ¹¤×÷²âÊÔ->ÓĞ¶¶¶¯£¬´ı½â¾ö
+		if(time_count>=50)   //1s          //èˆµæœºä¸æŒ‰é”®å¹¶è¡Œå·¥ä½œæµ‹è¯•->æœ‰æŠ–åŠ¨ï¼Œå¾…è§£å†³
 		{
 			time_count=0;
 			//LED_TOGGLE;
@@ -179,29 +185,29 @@ void TIM3_IRQHandler(void)   //TIM3ÖĞ¶Ï   ,20ms½øÒ»´Î
 		
 		if(open_door_flag)
 		{	
-			RELAY8_ON;	                     //´ò¿ªÃÅ¼ÌµçÆ÷		
+			RELAY8_ON;	                     //æ‰“å¼€é—¨ç»§ç”µå™¨		
 			open_time_count++;
 			if(open_time_count<=150)   //3s
 			{
-				TIM_SetCompare3(TIM3,50);    //Õı×ª¿ªÃÅ
+				TIM_SetCompare3(TIM3,50);    //æ­£è½¬å¼€é—¨
 			}
-			else if(open_time_count<=200)     //¿ªÃÅºóÍ£×ª1s
+			else if(open_time_count<=200)     //å¼€é—¨ååœè½¬1s
 			{
-				TIM_SetCompare3(TIM3,150);    //¶æ»úÍ£Ö¹ 
+				TIM_SetCompare3(TIM3,150);    //èˆµæœºåœæ­¢ 
 			}
-			else if(open_time_count<=350)     //·´×ª3s¹ØÃÅ
+			else if(open_time_count<=350)     //åè½¬3så…³é—¨
 			{
-				TIM_SetCompare3(TIM3,250);    //·´×ª  
+				TIM_SetCompare3(TIM3,250);    //åè½¬  
 			}	
 			else
 			{
-				TIM_SetCompare3(TIM3,150);   //¶æ»úÍ£Ö¹
-				open_time_count = 0;       //Çå¿Õ¼ÇÊ±
-				open_door_flag = 0;        //±êÖ¾Î»ÖÃ0
+				TIM_SetCompare3(TIM3,150);   //èˆµæœºåœæ­¢
+				open_time_count = 0;       //æ¸…ç©ºè®°æ—¶
+				open_door_flag = 0;        //æ ‡å¿—ä½ç½®0
 				
 				clear_face_display_flag = 1;	
 
-				RELAY8_OFF;               //¹Ø±ÕÃÅ¼ÌµçÆ÷
+				RELAY8_OFF;               //å…³é—­é—¨ç»§ç”µå™¨
 			}
 			
 		}
@@ -213,13 +219,13 @@ void TIM3_IRQHandler(void)   //TIM3ÖĞ¶Ï   ,20ms½øÒ»´Î
 			{
 				face_rec_count = 0;
 				face_rec_fail_flag = 0;
-				clear_face_display_flag = 1;   //Ö´ĞĞÇåÆÁ
+				clear_face_display_flag = 1;   //æ‰§è¡Œæ¸…å±
 			}
 		}
 		
 	
 		LCD_xy_display_flag=1;
-		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);  //Çå³ıTIMx¸üĞÂÖĞ¶Ï±êÖ¾ 
+		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);  //æ¸…é™¤TIMxæ›´æ–°ä¸­æ–­æ ‡å¿— 
 	}
 }
 
@@ -228,34 +234,34 @@ extern vu16 USART3_RX_STA;
 
 void TIM2_IRQHandler(void)
 { 	
-	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)//ÊÇ¸üĞÂÖĞ¶Ï
+	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)//æ˜¯æ›´æ–°ä¸­æ–­
 	{	 			   
-		USART3_RX_STA|=1<<15;	//±ê¼Ç½ÓÊÕÍê³É
-		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);  //Çå³ıTIM2¸üĞÂÖĞ¶Ï±êÖ¾    
-		TIM_Cmd(TIM2, DISABLE);  //¹Ø±ÕTIM2      ->´Ë´¦²»¹Ø±Õ¶¨Ê±Æ÷»á½øÈë¿¨ËÀ×´Ì¬  ->  ??
+		USART3_RX_STA|=1<<15;	//æ ‡è®°æ¥æ”¶å®Œæˆ
+		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);  //æ¸…é™¤TIM2æ›´æ–°ä¸­æ–­æ ‡å¿—    
+		TIM_Cmd(TIM2, DISABLE);  //å…³é—­TIM2      ->æ­¤å¤„ä¸å…³é—­å®šæ—¶å™¨ä¼šè¿›å…¥å¡æ­»çŠ¶æ€  ->  ??
 	}	    
 }
 
 
 
 
-//ÓÃÓÚOEPNMVÍ¨ĞÅ
-void USART1_IRQHandler(void)                	//´®¿Ú1ÖĞ¶Ï·şÎñ³ÌĞò
+//ç”¨äºOEPNMVé€šä¿¡
+void USART1_IRQHandler(void)                	//ä¸²å£1ä¸­æ–­æœåŠ¡ç¨‹åº
 {
 	int Res;
-	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //½ÓÊÕÖĞ¶Ï(½ÓÊÕµ½µÄÊı¾İ±ØĞëÊÇ0x0d 0x0a½áÎ²)  //»áÒ»Ö±½øÈë
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //æ¥æ”¶ä¸­æ–­(æ¥æ”¶åˆ°çš„æ•°æ®å¿…é¡»æ˜¯0x0d 0x0aç»“å°¾)  //ä¼šä¸€ç›´è¿›å…¥
 	{
-		Res = USART_ReceiveData(USART1);//(USART1->DR);	//¶ÁÈ¡½ÓÊÕµ½µÄÊı¾İ
+		Res = USART_ReceiveData(USART1);//(USART1->DR);	//è¯»å–æ¥æ”¶åˆ°çš„æ•°æ®
 
-		face_inf_Rec(Res);        //½ÓÊÕÈËÁ³Ê¶±ğÊı¾İ
-		Openmv_Recive(Res);	      //½ÓÊÕ×ø±êÊı¾İ
+		q[tt++] = Res;
+		if(tt == maxn) tt = 0;
 				
-		if(openmv[2]!=0 && openmv[3]!=0)        //Ö»½ÓÊÜ²»µÈÓÚ0µÄĞÅÏ¢
-			Openmv_data();
-		if(face_information[2] != 0)		    //½ÓÊÕÈËÁ³ÅĞ¶ÏĞÅÏ¢
-			Face_data();
+//		if(openmv[2]!=0 && openmv[3]!=0)        //åªæ¥å—ä¸ç­‰äº0çš„ä¿¡æ¯
+//			Openmv_data();
+//		if(face_information[2] != 0)		    //æ¥æ”¶äººè„¸åˆ¤æ–­ä¿¡æ¯
+//			Face_data();
 
-		USART_ClearITPendingBit(USART1, USART_IT_RXNE);   //Çå³ı USART1 µÄÖĞ¶Ï´ı´¦ÀíÎ»	 		 
+		USART_ClearITPendingBit(USART1, USART_IT_RXNE);   //æ¸…é™¤ USART1 çš„ä¸­æ–­å¾…å¤„ç†ä½	 		 
   } 
 } 
 
