@@ -1,115 +1,52 @@
 #include "openmv.h"
 
-int Openmv_X=100; /*OPENMV X Öá·´À¡×ø±ê*/
-int Openmv_Y=100; /*OPENMV Y Öá·´À¡×ø±ê*/
+int Openmv_X=100; /*OPENMV X è½´åé¦ˆåæ ‡*/
+int Openmv_Y=100; /*OPENMV Y è½´åé¦ˆåæ ‡*/
 
 int Face_Inf = 100;
 
-int openmv[5];//stm32½ÓÊÕÊı¾İÊı×é	       //¶¨ÒåÁËÒ»ÖÖÍ¨ĞÅ¸ñÊ½
+int openmv[5];//stm32æ¥æ”¶æ•°æ®æ•°ç»„	       //å®šä¹‰äº†ä¸€ç§é€šä¿¡æ ¼å¼
 int face_information[5];
 
 #if 1
-void Openmv_Recive(int data)           //-------½ÓÊÕ×ø±ê
+void Openmv_Recive(u8 q[])           //-------æ¥æ”¶åæ ‡
 {
-	u8 i;
-	static u8 state = 0;
-		
-	if(state==0&&data==0xb3)
-	{
-		state = 1;
-		openmv[0] = data;
+	u8 i, t;
+	u8 tmp[5];
+	t = q[hh];
+	if(t != 0xb3) return;  //ä¸æ˜¯åæ ‡ä¿¡æ¯ï¼Œç›´æ¥è¿”å›
+	for(i = 0; i < 5; i++) {
+		tmp[i] = q[hh++];
+		if(hh == maxn) hh = 0;
 	}
-	else if(state==1&&data==0xb3)
-	{
-		state = 2;
-		openmv[1] = data;
+	if(tmp[0] != 0xb3 && tmp[1] != 0xb3 && tmp[4] != 0x5b){
+		openmv[i] = tmp[i];
 	}
-	else if(state==2)
-	{
-		state = 3;
-		openmv[2] = data;
+	else {
+		for(i = 0; i < 5; i++) openmv[i] = 0;
 	}
-	else if(state==3)
-	{
-		state = 4;
-		openmv[3] = data;
-	}
-	else if(state==4)
-	{
-		if(data == 0x5b)
-		{
-			state = 0;
-			openmv[4] = data;
-		}
-		else if(data != 0x5b)
-		{
-			state = 0;
-			for(i=0;i<5;i++)
-			{
-				openmv[i] = 0x00;
-			}
-		}
-	}
-	else
-	{
-		state = 0;
-		for(i=0;i<5;i++)
-		{
-			openmv[i] = 0x00;
-		}
-	}	
+	Openmv_data();
 }
 
 
-void face_inf_Rec(int data)             //-------½ÓÊÕÉí·İĞÅÏ¢
+void face_inf_Rec(u8 q[])             //-------æ¥æ”¶èº«ä»½ä¿¡æ¯
 {
-//	u8 j;
-	static u8 flag = 0;
-	if(flag==0 && data==0xb1)
-	{
-		flag = 1;
-		face_information[0] = data;
+	u8 i, t, tmp[5];
+	t = q[hh];
+	if(t != 0xb1) return;
+	for(i = 0; i < 5; i++){
+		tmp[i] = q[hh++];
+		if(hh == maxn) hh = 0;
 	}
-	else if(flag==1 && data==0xb1)
-	{
-		flag = 2;
-		face_information[1] = data;
-	}
-	else if(flag==2)
-	{
-		flag = 3;
-		face_information[2] = data;     //face information   200
-	}
-	else if(flag==3)
-	{
-		flag = 4;;
-		face_information[3] = data;
-	}
-	else if(flag==4)
-	{
-		if(data == 0x5b)
-		{
-			flag = 0;
-			face_information[4] = data;
+	if(tmp[0] == 0xb1 && tmp[1] == 0xb1 && tmp[4] == 0x5b){
+		for(i = 0; i < 5; i++){
+			face_information[i] = tmp[i];
 		}
-//		else if(data != 0x5b)
-//		{
-//			flag = 0;
-//			for(j=0;j<5;j++)
-//			{
-//				face_information[j] = 0x00;
-//			}
-//		}
 	}
-	else
-	{
-		flag = 0;
-//		for(j=0;j<5;j++)
-//		{
-//			face_information[j] = 0x00;
-//		}
-	}	
-	
+	else{
+		for(i = 0; i < 5; i++) face_information[i] = 0;
+	}
+	Face_data();
 }
 
 
@@ -127,9 +64,9 @@ void Face_data()
 
 
 #elif 0
-uint8_t judge_index=0;       //1--×ø±êÅĞ¶Ï     2--ÈËÁ³ĞÅÏ¢ÅĞ¶Ï
+uint8_t judge_index=0;       //1--åæ ‡åˆ¤æ–­     2--äººè„¸ä¿¡æ¯åˆ¤æ–­
 
-void Openmv_Recive(int data)     //0x01--×ø±êÊı¾İ      0x02--ÈËÁ³Ê¶±ğĞÅÏ¢£¬
+void Openmv_Recive(int data)     //0x01--åæ ‡æ•°æ®      0x02--äººè„¸è¯†åˆ«ä¿¡æ¯ï¼Œ
 {
 	u8 i;
 	static u8 state = 0;
@@ -164,12 +101,12 @@ void Openmv_Recive(int data)     //0x01--×ø±êÊı¾İ      0x02--ÈËÁ³Ê¶±ğĞÅÏ¢£¬
 				else if(state==3)
 				{
 					state = 4;
-					openmv[3] = data;      //X×ø±ê
+					openmv[3] = data;      //Xåæ ‡
 				}
 				else if(state==4)
 				{
 					state = 5;
-					openmv[4] = data;	   //Y×ø±ê
+					openmv[4] = data;	   //Yåæ ‡
 				}
 				else if(state==5)
 				{
@@ -211,7 +148,7 @@ void Openmv_Recive(int data)     //0x01--×ø±êÊı¾İ      0x02--ÈËÁ³Ê¶±ğĞÅÏ¢£¬
 				else if(state==3)
 				{
 					state = 4;
-					face_information[3] = data;      //ÈËÁ³ĞòºÅ£¬ÓÃÓÚLCDÆÁÄ»ÉÏÏÔÊ¾¶ÔÓ¦Ãû×Ö
+					face_information[3] = data;      //äººè„¸åºå·ï¼Œç”¨äºLCDå±å¹•ä¸Šæ˜¾ç¤ºå¯¹åº”åå­—
 				}
 				else if(state==4)
 				{
@@ -254,5 +191,3 @@ void Openmv_data()
 }
 
 #endif
-
-
